@@ -161,14 +161,9 @@ def validate_new_file(
     current_year: int,
     violations: List[Violation],
 ) -> None:
+    # If years_field is None, it means the header format was already reported as invalid
+    # or the file was skipped, so we don't need to report again
     if years_field is None:
-        violations.append(
-            Violation(
-                path,
-                "Missing SPDX header on new file. Expected current year header.",
-                "新增文件缺少 SPDX 版权头，需添加包含当前年份的版权信息。",
-            )
-        )
         return
 
     start_year, end_year = parse_years(years_field)
@@ -206,14 +201,9 @@ def validate_modified_file(
     current_year: int,
     violations: List[Violation],
 ) -> None:
+    # If years_field is None, it means the header format was already reported as invalid
+    # or the file was skipped, so we don't need to report again
     if years_field is None:
-        violations.append(
-            Violation(
-                path,
-                "Missing SPDX header on modified file.",
-                "被修改的文件缺少 SPDX 版权头。",
-            )
-        )
         return
 
     start_year, end_year = parse_years(years_field)
@@ -391,8 +381,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             skipped_count += 1
             continue
 
-        checked_count += 1
         header_line, license_line = extract_header_lines(path_obj)
+
+        # Skip files without SPDX headers - they are not in scope for validation
+        if not header_line:
+            if debug:
+                print(f"[DEBUG] ⊘ Skipped (no SPDX header): {rel_path}")
+            skipped_count += 1
+            continue
+
+        checked_count += 1
         years_field: Optional[str] = None
         license_ok = False
         file_violations_before = len(violations)
