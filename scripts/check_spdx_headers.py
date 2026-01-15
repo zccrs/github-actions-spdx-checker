@@ -21,7 +21,6 @@ import subprocess
 import sys
 from typing import Iterable, List, Optional, Sequence, Tuple
 
-CURRENT_YEAR = _dt.datetime.now(_dt.timezone.utc).year
 COMMENT_PREFIXES = ("//", "#")
 HEADER_REGEX = re.compile(
     r"^(?P<prefix>//|#)\s*SPDX-FileCopyrightText:\s*"
@@ -147,6 +146,7 @@ def validate_new_file(
     path: str,
     years_field: Optional[str],
     license_ok: bool,
+    current_year: int,
     violations: List[Violation],
 ) -> None:
     if years_field is None:
@@ -168,12 +168,12 @@ def validate_new_file(
                 "新增文件的 SPDX 版权头必须只包含当前年份，不能使用年份范围。",
             )
         )
-    elif start_year != CURRENT_YEAR:
+    elif start_year != current_year:
         violations.append(
             Violation(
                 path,
-                f"SPDX header year should be {CURRENT_YEAR} for new files.",
-                f"新增文件的 SPDX 版权年份应为 {CURRENT_YEAR}。",
+                f"SPDX header year should be {current_year} for new files.",
+                f"新增文件的 SPDX 版权年份应为 {current_year}。",
             )
         )
     if not license_ok:
@@ -191,6 +191,7 @@ def validate_modified_file(
     years_field: Optional[str],
     license_ok: bool,
     creation_year: Optional[int],
+    current_year: int,
     violations: List[Violation],
 ) -> None:
     if years_field is None:
@@ -205,9 +206,9 @@ def validate_modified_file(
 
     start_year, end_year = parse_years(years_field)
     if end_year is None:
-        if start_year != CURRENT_YEAR:
-            if creation_year and creation_year < CURRENT_YEAR:
-                range_text = f"{creation_year}-{CURRENT_YEAR}"
+        if start_year != current_year:
+            if creation_year and creation_year < current_year:
+                range_text = f"{creation_year}-{current_year}"
                 violations.append(
                     Violation(
                         path,
@@ -225,21 +226,21 @@ def validate_modified_file(
                 violations.append(
                     Violation(
                         path,
-                        f"SPDX header year should be {CURRENT_YEAR}.",
-                        f"请将 SPDX 版权年份更新为 {CURRENT_YEAR}。",
+                        f"SPDX header year should be {current_year}.",
+                        f"请将 SPDX 版权年份更新为 {current_year}。",
                     )
                 )
-        elif creation_year and creation_year < CURRENT_YEAR:
+        elif creation_year and creation_year < current_year:
             violations.append(
                 Violation(
                     path,
                     (
                         "File has earlier creation year; use range format "
-                        f"{creation_year}-{CURRENT_YEAR}."
+                        f"{creation_year}-{current_year}."
                     ),
                     (
                         "该文件创建于较早年份，应使用年份范围格式 "
-                        f"{creation_year}-{CURRENT_YEAR}。"
+                        f"{creation_year}-{current_year}。"
                     ),
                 )
             )
@@ -252,12 +253,12 @@ def validate_modified_file(
                     "SPDX 年份范围不合法：起始年份大于结束年份。",
                 )
             )
-        if end_year != CURRENT_YEAR:
+        if end_year != current_year:
             violations.append(
                 Violation(
                     path,
-                    f"Update SPDX year range end to {CURRENT_YEAR}.",
-                    f"请将 SPDX 年份范围的结束年份更新为 {CURRENT_YEAR}。",
+                    f"Update SPDX year range end to {current_year}.",
+                    f"请将 SPDX 年份范围的结束年份更新为 {current_year}。",
                 )
             )
         if creation_year and start_year != creation_year:
@@ -307,7 +308,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         nargs="*",
         help="Optional list of glob patterns (relative) to exclude from validation.",
     )
+    parser.add_argument(
+        "--year",
+        type=int,
+        default=_dt.datetime.now(_dt.timezone.utc).year,
+        help="Current year for validation (default: current UTC year)",
+    )
     args = parser.parse_args(argv)
+    current_year = args.year
 
     base_ref = args.base
 
@@ -395,14 +403,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         status = status.upper()
         if status == "A":
-            validate_new_file(rel_path, years_field, license_ok, violations)
+            validate_new_file(rel_path, years_field, license_ok, current_year, violations)
         elif status == "M":
             creation_year = get_creation_year(rel_path)
-            validate_modified_file(rel_path, years_field, license_ok, creation_year, violations)
+            validate_modified_file(rel_path, years_field, license_ok, creation_year, current_year, violations)
         elif status == "C":
             # Treat copies as modifications.
             creation_year = get_creation_year(rel_path)
-            validate_modified_file(rel_path, years_field, license_ok, creation_year, violations)
+            validate_modified_file(rel_path, years_field, license_ok, creation_year, current_year, violations)
 
     if violations:
         print("SPDX header validation failed:\n")

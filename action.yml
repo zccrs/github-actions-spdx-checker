@@ -22,6 +22,10 @@ inputs:
     description: 'Comma-separated list of glob patterns to exclude'
     required: false
     default: ''
+  year:
+    description: 'Current year for validation (default: current UTC year)'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -42,6 +46,7 @@ runs:
         base_ref="${{ inputs.base }}"
         include_patterns="${{ inputs.include }}"
         exclude_patterns="${{ inputs.exclude }}"
+        year="${{ inputs.year }}"
 
         args="--base $base_ref"
 
@@ -51,6 +56,10 @@ runs:
 
         if [ -n "$exclude_patterns" ]; then
           args="$args --exclude $(echo $exclude_patterns | tr ',' ' ')"
+        fi
+
+        if [ -n "$year" ]; then
+          args="$args --year $year"
         fi
 
         python3 "${{ github.action_path }}/scripts/check_spdx_headers.py" $args

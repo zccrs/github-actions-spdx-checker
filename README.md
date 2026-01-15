@@ -52,11 +52,13 @@ jobs:
 - **base** (optional): Base reference to diff against (default: `origin/main`)
 - **include** (optional): Comma-separated glob patterns to include (default: all files)
 - **exclude** (optional): Comma-separated glob patterns to exclude (default: none)
+- **year** (optional): Current year for validation (default: current UTC year)
 
 ### Local Usage
 
 ```bash
 python3 scripts/check_spdx_headers.py --base origin/main
+python3 scripts/check_spdx_headers.py --base origin/main --year 2024
 ```
 
 ## SPDX Header Format
