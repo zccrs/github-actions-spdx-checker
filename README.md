@@ -43,8 +43,8 @@ jobs:
       - uses: zccrs/github-actions-spdx-checker@v1
         with:
           base: origin/main
-          include: '*.py,*.cpp,*.h'
-          exclude: 'vendor/**'
+          include: '*.py,*.js,*.ts,*.jsx,*.tsx,*.java,*.cpp,*.c,*.h,*.hpp,*.go,*.rs,*.rb,*.php,*.sh,*.xml,*.yaml,*.yml,*.json,CMakeLists.txt,Makefile'
+          exclude: 'vendor/**,node_modules/**'
 ```
 
 ### Inputs
@@ -53,6 +53,28 @@ jobs:
 - **include** (optional): Comma-separated glob patterns to include (default: all files)
 - **exclude** (optional): Comma-separated glob patterns to exclude (default: none)
 - **year** (optional): Current year for validation (default: current UTC year)
+
+### Supported File Types
+
+The action works with any file type using `//` or `#` comment styles. Common examples include:
+
+**Programming Languages:**
+- Python: `.py`
+- JavaScript/TypeScript: `.js`, `.ts`, `.jsx`, `.tsx`
+- Java: `.java`
+- C/C++: `.c`, `.cpp`, `.h`, `.hpp`
+- Go: `.go`
+- Rust: `.rs`
+- Ruby: `.rb`
+- PHP: `.php`
+- Shell: `.sh`, `.bash`
+
+**Configuration & Data Formats:**
+- XML: `.xml`
+- YAML/YML: `.yaml`, `.yml`
+- JSON: `.json`
+- CMake: `CMakeLists.txt`
+- Make: `Makefile`
 
 ### Local Usage
 
