@@ -21,7 +21,7 @@ import subprocess
 import sys
 from typing import Iterable, List, Optional, Sequence, Tuple
 
-CURRENT_YEAR = _dt.datetime.now(_dt.UTC).year
+CURRENT_YEAR = _dt.datetime.now(_dt.timezone.utc).year
 COMMENT_PREFIXES = ("//", "#")
 HEADER_REGEX = re.compile(
     r"^(?P<prefix>//|#)\s*SPDX-FileCopyrightText:\s*"
