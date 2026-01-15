@@ -26,7 +26,7 @@ COMMENT_PREFIXES = ("//", "#")
 HEADER_REGEX = re.compile(
     r"^(?P<prefix>//|#)\s*SPDX-FileCopyrightText:\s*"
     r"(?P<years>\d{4}(?:-\d{4})?)\s+"
-    r"UnionTech Software Technology Co\., Ltd\.?\s*$"
+    r"(?P<holder>.+)$"
 )
 LICENSE_REGEX = re.compile(
     r"^(?P<prefix>//|#)\s*SPDX-License-Identifier:\s*(?P<license>\S.*)$"
@@ -346,6 +346,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if header_match:
                 years_field = header_match.group("years")
                 header_prefix = header_match.group("prefix")
+                holder = header_match.group("holder")
+                if not holder or not holder.strip():
+                    violations.append(
+                        Violation(
+                            rel_path,
+                            "SPDX header format is invalid: missing copyright holder.",
+                            "SPDX 版权头格式不正确：缺少版权持有者信息。",
+                        )
+                    )
+                    header_prefix = None
             else:
                 violations.append(
                     Violation(
