@@ -151,7 +151,7 @@ class TestValidateNewFile(unittest.TestCase):
     def test_new_file_missing_header(self):
         """Test that missing header (None years_field) is handled gracefully."""
         violations = []
-        validate_new_file("test.py", None, False, self.current_year, violations)
+        validate_new_file("test.py", None, False, self.current_year, None, None, violations)
         # When years_field is None, the function returns early without adding violations
         # The missing header should be caught earlier in the main loop
         self.assertEqual(len(violations), 0)
@@ -159,21 +159,28 @@ class TestValidateNewFile(unittest.TestCase):
     def test_new_file_invalid_year(self):
         """Test that incorrect year generates violation."""
         violations = []
-        validate_new_file("test.py", "2025", True, self.current_year, violations)
+        header = "// SPDX-FileCopyrightText: 2025 Test Corp"
+        validate_new_file("test.py", "2025", True, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 1)
         self.assertIn("should be", violations[0].message_en)
+        self.assertIn("Current:", violations[0].message_en)
+        self.assertIn("Expected:", violations[0].message_en)
 
     def test_new_file_with_year_range(self):
         """Test that year range on new file generates violation."""
         violations = []
-        validate_new_file("test.py", "2023-2026", True, self.current_year, violations)
+        header = "// SPDX-FileCopyrightText: 2023-2026 Test Corp"
+        validate_new_file("test.py", "2023-2026", True, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 1)
         self.assertIn("single year", violations[0].message_en)
+        self.assertIn("Current:", violations[0].message_en)
+        self.assertIn("Expected:", violations[0].message_en)
 
     def test_new_file_valid(self):
         """Test valid new file generates no violations."""
         violations = []
-        validate_new_file("test.py", str(self.current_year), True, self.current_year, violations)
+        header = f"// SPDX-FileCopyrightText: {self.current_year} Test Corp"
+        validate_new_file("test.py", str(self.current_year), True, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 0)
 
 
@@ -187,7 +194,7 @@ class TestValidateModifiedFile(unittest.TestCase):
     def test_modified_file_missing_header(self):
         """Test that missing header (None years_field) is handled gracefully."""
         violations = []
-        validate_modified_file("test.py", None, False, 2023, self.current_year, violations)
+        validate_modified_file("test.py", None, False, 2023, self.current_year, None, None, violations)
         # When years_field is None, the function returns early without adding violations
         # The missing header should be caught earlier in the main loop
         self.assertEqual(len(violations), 0)
@@ -195,35 +202,46 @@ class TestValidateModifiedFile(unittest.TestCase):
     def test_modified_file_same_year_current(self):
         """Test modified file created in current year."""
         violations = []
-        validate_modified_file("test.py", str(self.current_year), True, self.current_year, self.current_year, violations)
+        header = f"// SPDX-FileCopyrightText: {self.current_year} Test Corp"
+        validate_modified_file("test.py", str(self.current_year), True, self.current_year, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 0)
 
     def test_modified_file_older_without_range(self):
         """Test modified file from older year without range format."""
         violations = []
-        validate_modified_file("test.py", "2023", True, 2023, self.current_year, violations)
+        header = "// SPDX-FileCopyrightText: 2023 Test Corp"
+        validate_modified_file("test.py", "2023", True, 2023, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 1)
         self.assertIn("year range", violations[0].message_en)
+        self.assertIn("Current:", violations[0].message_en)
+        self.assertIn("Expected:", violations[0].message_en)
 
     def test_modified_file_with_correct_range(self):
         """Test modified file with correct year range."""
         violations = []
-        validate_modified_file("test.py", f"2023-{self.current_year}", True, 2023, self.current_year, violations)
+        header = f"// SPDX-FileCopyrightText: 2023-{self.current_year} Test Corp"
+        validate_modified_file("test.py", f"2023-{self.current_year}", True, 2023, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 0)
 
     def test_modified_file_with_incorrect_range_end(self):
         """Test modified file with incorrect range end year."""
         violations = []
-        validate_modified_file("test.py", "2023-2025", True, 2023, self.current_year, violations)
+        header = "// SPDX-FileCopyrightText: 2023-2025 Test Corp"
+        validate_modified_file("test.py", "2023-2025", True, 2023, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 1)
         self.assertIn("Update SPDX year range", violations[0].message_en)
+        self.assertIn("Current:", violations[0].message_en)
+        self.assertIn("Expected:", violations[0].message_en)
 
     def test_modified_file_identical_range(self):
         """Test modified file with identical start and end year."""
         violations = []
-        validate_modified_file("test.py", f"{self.current_year}-{self.current_year}", True, self.current_year, self.current_year, violations)
+        header = f"// SPDX-FileCopyrightText: {self.current_year}-{self.current_year} Test Corp"
+        validate_modified_file("test.py", f"{self.current_year}-{self.current_year}", True, self.current_year, self.current_year, header, "Test Corp", violations)
         self.assertEqual(len(violations), 1)
         self.assertIn("identical start and end", violations[0].message_en)
+        self.assertIn("Current:", violations[0].message_en)
+        self.assertIn("Expected:", violations[0].message_en)
 
 
 class TestViolationClass(unittest.TestCase):
