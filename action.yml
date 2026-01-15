@@ -5,6 +5,10 @@ name: 'SPDX Header Checker'
 description: 'Validate SPDX copyright headers on pull requests'
 author: 'UnionTech Software Technology Co., Ltd.'
 
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
 inputs:
   base:
     description: 'Base reference to diff against (e.g., origin/main)'
