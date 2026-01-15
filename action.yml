@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: 'SPDX Header Checker'
+description: 'Validate SPDX copyright headers on pull requests'
+author: 'UnionTech Software Technology Co., Ltd.'
+
+inputs:
+  base:
+    description: 'Base reference to diff against (e.g., origin/main)'
+    required: false
+    default: 'origin/main'
+  include:
+    description: 'Comma-separated list of glob patterns to include'
+    required: false
+    default: ''
+  exclude:
+    description: 'Comma-separated list of glob patterns to exclude'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Run SPDX header validation
+      shell: bash
+      run: |
+        base_ref="${{ inputs.base }}"
+        include_patterns="${{ inputs.include }}"
+        exclude_patterns="${{ inputs.exclude }}"
+        
+        args="--base $base_ref"
+        
+        if [ -n "$include_patterns" ]; then
+          args="$args --include $(echo $include_patterns | tr ',' ' ')"
+        fi
+        
+        if [ -n "$exclude_patterns" ]; then
+          args="$args --exclude $(echo $exclude_patterns | tr ',' ' ')"
+        fi
+        
+        python3 "${{ github.action_path }}/scripts/check_spdx_headers.py" $args
