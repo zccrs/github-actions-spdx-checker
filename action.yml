@@ -26,6 +26,14 @@ inputs:
     description: 'Current year for validation (default: current UTC year)'
     required: false
     default: ''
+  debug:
+    description: 'Enable debug mode with detailed output for each file'
+    required: false
+    default: 'false'
+  all-files:
+    description: 'Check all files in repository instead of only changed files'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -47,6 +55,8 @@ runs:
         include_patterns="${{ inputs.include }}"
         exclude_patterns="${{ inputs.exclude }}"
         year="${{ inputs.year }}"
+        debug="${{ inputs.debug }}"
+        all_files="${{ inputs.all-files }}"
 
         args="--base $base_ref"
 
@@ -60,6 +70,14 @@ runs:
 
         if [ -n "$year" ]; then
           args="$args --year $year"
+        fi
+
+        if [ "$debug" = "true" ]; then
+          args="$args --debug"
+        fi
+
+        if [ "$all_files" = "true" ]; then
+          args="$args --all-files"
         fi
 
         python3 "${{ github.action_path }}/scripts/check_spdx_headers.py" $args

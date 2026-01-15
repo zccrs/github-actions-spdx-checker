@@ -53,6 +53,25 @@ jobs:
 - **include** (optional): Comma-separated glob patterns to include (default: all files)
 - **exclude** (optional): Comma-separated glob patterns to exclude (default: none)
 - **year** (optional): Current year for validation (default: current UTC year)
+- **debug** (optional): Enable debug mode with detailed output for each file (default: `false`)
+- **all-files** (optional): Check all files in repository instead of only changed files (default: `false`)
+
+### Advanced Usage
+
+**Check all files in repository:**
+```yaml
+- uses: zccrs/github-actions-spdx-checker@v1
+  with:
+    all-files: true
+    exclude: 'vendor/**,node_modules/**'
+```
+
+**Enable debug mode:**
+```yaml
+- uses: zccrs/github-actions-spdx-checker@v1
+  with:
+    debug: true
+```
 
 ### Supported File Types
 
@@ -79,8 +98,20 @@ The action works with any file type using `//` or `#` comment styles. Common exa
 ### Local Usage
 
 ```bash
+# Check only changed files (default)
 python3 scripts/check_spdx_headers.py --base origin/main
+
+# Check all files in repository
+python3 scripts/check_spdx_headers.py --all-files
+
+# Enable debug mode
+python3 scripts/check_spdx_headers.py --base origin/main --debug
+
+# Specify custom year
 python3 scripts/check_spdx_headers.py --base origin/main --year 2024
+
+# Combine options
+python3 scripts/check_spdx_headers.py --all-files --debug --exclude 'vendor/**' 'node_modules/**'
 ```
 
 ## SPDX Header Format

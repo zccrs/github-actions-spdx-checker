@@ -81,6 +81,18 @@ def list_changed_files(base: str) -> List[Tuple[str, str]]:
     return entries
 
 
+def list_all_files() -> List[Tuple[str, str]]:
+    """Return a list of (status='M', path) for all tracked files in the repository."""
+
+    ls_output = run_git(["ls-files"])
+    entries: List[Tuple[str, str]] = []
+    for line in ls_output.splitlines():
+        if line.strip():
+            # Mark all files as 'M' (modified) for validation purposes
+            entries.append(("M", line.strip()))
+    return entries
+
+
 def extract_header_lines(path: pathlib.Path) -> Tuple[Optional[str], Optional[str]]:
     """Return the SPDX header and license lines if present within the first 10 lines."""
 
@@ -314,40 +326,76 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         default=_dt.datetime.now(_dt.timezone.utc).year,
         help="Current year for validation (default: current UTC year)",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode with detailed output for each file",
+    )
+    parser.add_argument(
+        "--all-files",
+        action="store_true",
+        help="Check all files in repository instead of only changed files",
+    )
     args = parser.parse_args(argv)
     current_year = args.year
+    debug = args.debug
+    check_all_files = args.all_files
 
     base_ref = args.base
 
-    try:
-        run_git(["rev-parse", base_ref])
-    except RuntimeError as exc:
-        print(exc, file=sys.stderr)
-        return 2
+    if check_all_files:
+        if debug:
+            print("[DEBUG] Running in all-files mode: checking all tracked files in repository")
+        changed = list_all_files()
+    else:
+        try:
+            run_git(["rev-parse", base_ref])
+        except RuntimeError as exc:
+            print(exc, file=sys.stderr)
+            return 2
+        if debug:
+            print(f"[DEBUG] Running in diff mode: checking files changed since {base_ref}")
+        changed = list_changed_files(base_ref)
 
-    changed = list_changed_files(base_ref)
     if not changed:
         print("No applicable file changes detected; skipping SPDX validation.")
         return 0
+
+    if debug:
+        print(f"[DEBUG] Found {len(changed)} file(s) to process")
 
     include_patterns = [pattern for pattern in args.include or []]
     exclude_patterns = [pattern for pattern in args.exclude or []]
 
     violations: List[Violation] = []
+    checked_count = 0
+    skipped_count = 0
+    passed_count = 0
 
     for status, rel_path in changed:
         path_obj = pathlib.Path(rel_path)
         path_posix = pathlib.PurePosixPath(rel_path)
         if include_patterns and not any(fnmatch.fnmatch(path_posix.as_posix(), pattern) for pattern in include_patterns):
+            if debug:
+                print(f"[DEBUG] ⊘ Skipped (not in include patterns): {rel_path}")
+            skipped_count += 1
             continue
         if exclude_patterns and any(fnmatch.fnmatch(path_posix.as_posix(), pattern) for pattern in exclude_patterns):
+            if debug:
+                print(f"[DEBUG] ⊘ Skipped (in exclude patterns): {rel_path}")
+            skipped_count += 1
             continue
         if path_obj.is_dir():
+            if debug:
+                print(f"[DEBUG] ⊘ Skipped (directory): {rel_path}")
+            skipped_count += 1
             continue
 
+        checked_count += 1
         header_line, license_line = extract_header_lines(path_obj)
         years_field: Optional[str] = None
         license_ok = False
+        file_violations_before = len(violations)
 
         if header_line:
             header_match = HEADER_REGEX.match(header_line.strip())
@@ -411,6 +459,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             # Treat copies as modifications.
             creation_year = get_creation_year(rel_path)
             validate_modified_file(rel_path, years_field, license_ok, creation_year, current_year, violations)
+
+        # Check if this file added new violations
+        file_violations_after = len(violations)
+        if file_violations_after > file_violations_before:
+            if debug:
+                print(f"[DEBUG] ✗ Failed: {rel_path}")
+        else:
+            if debug:
+                print(f"[DEBUG] ✓ Passed: {rel_path}")
+            passed_count += 1
+
+    if debug:
+        print(f"\n[DEBUG] Summary: {checked_count} checked, {passed_count} passed, {len(violations)} failed, {skipped_count} skipped")
 
     if violations:
         print("SPDX header validation failed:\n")
