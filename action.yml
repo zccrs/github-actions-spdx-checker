@@ -38,15 +38,15 @@ runs:
         base_ref="${{ inputs.base }}"
         include_patterns="${{ inputs.include }}"
         exclude_patterns="${{ inputs.exclude }}"
-        
+
         args="--base $base_ref"
-        
+
         if [ -n "$include_patterns" ]; then
           args="$args --include $(echo $include_patterns | tr ',' ' ')"
         fi
-        
+
         if [ -n "$exclude_patterns" ]; then
           args="$args --exclude $(echo $exclude_patterns | tr ',' ' ')"
         fi
-        
+
         python3 "${{ github.action_path }}/scripts/check_spdx_headers.py" $args

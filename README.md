@@ -7,12 +7,12 @@ A GitHub Action to validate SPDX copyright headers on pull requests. Ensures all
 
 ## Features
 
-✅ **New Files**: Validates that new files include SPDX headers with the current year  
-✅ **Modified Files**: Ensures modified files update to current year or use proper year ranges  
-✅ **File Creation Detection**: Automatically detects original file creation year from git history  
-✅ **Flexible Patterns**: Support for including/excluding files by glob patterns  
-✅ **Bilingual Messages**: Error messages in both English and Simplified Chinese  
-✅ **Multi-Format Support**: Works with `//` and `#` style comments  
+✅ **New Files**: Validates that new files include SPDX headers with the current year
+✅ **Modified Files**: Ensures modified files update to current year or use proper year ranges
+✅ **File Creation Detection**: Automatically detects original file creation year from git history
+✅ **Flexible Patterns**: Support for including/excluding files by glob patterns
+✅ **Bilingual Messages**: Error messages in both English and Simplified Chinese
+✅ **Multi-Format Support**: Works with `//` and `#` style comments
 
 ## What It Checks
 
