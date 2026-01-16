@@ -558,14 +558,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if debug:
         print(f"\n[DEBUG] Summary: {checked_count} checked, {passed_count} passed, {len(violations)} failed, {skipped_count} skipped")
 
+    # Print summary for all modes
+    print("\n" + "=" * 60)
+    print("SPDX Header Validation Summary / SPDX 头验证汇总")
+    print("=" * 60)
+    print(f"Checked / 已检查:  {checked_count}")
+    print(f"Passed / 通过:     {passed_count}")
+    print(f"Failed / 失败:     {len(violations)}")
+    print(f"Skipped / 跳过:    {skipped_count}")
+    print("=" * 60)
+
     if violations:
-        print("SPDX header validation failed:\n")
+        print("\nSPDX header validation failed:\n")
         for problem in violations:
             print(problem)
             print()
         return 1
 
-    print("All checked files have valid SPDX headers.")
+    print("\n✓ All checked files have valid SPDX headers.")
+    print("✓ 所有检查的文件都有有效的 SPDX 头。")
     return 0
 
 
