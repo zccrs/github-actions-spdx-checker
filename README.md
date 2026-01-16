@@ -13,6 +13,25 @@ A GitHub Action to validate SPDX copyright headers on pull requests. Ensures all
 ✅ **Flexible Patterns**: Support for including/excluding files by glob patterns
 ✅ **Bilingual Messages**: Error messages in both English and Simplified Chinese
 ✅ **Multi-Format Support**: Works with `//` and `#` style comments
+✅ **Dual Header Formats**: Supports both `SPDX-FileCopyrightText` and traditional `Copyright (C)` formats
+
+## Supported Header Formats
+
+This action validates two copyright header formats:
+
+1. **SPDX Format** (Recommended):
+   ```
+   // SPDX-FileCopyrightText: 2026 Your Company Name
+   // SPDX-License-Identifier: GPL-3.0-or-later
+   ```
+
+2. **Traditional Copyright Format**:
+   ```
+   // Copyright (C) 2026 Your Company Name
+   // SPDX-License-Identifier: GPL-3.0-or-later
+   ```
+
+Both formats follow the same year validation rules.
 
 ## What It Checks
 
