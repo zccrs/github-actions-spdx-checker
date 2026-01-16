@@ -34,6 +34,10 @@ inputs:
     description: 'Check all files in repository instead of only changed files'
     required: false
     default: 'false'
+  holder:
+    description: 'Only check files with matching copyright holder (supports wildcards like *UnionTech*). Empty means check all files.'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -57,6 +61,7 @@ runs:
         year="${{ inputs.year }}"
         debug="${{ inputs.debug }}"
         all_files="${{ inputs.all-files }}"
+        holder="${{ inputs.holder }}"
 
         args="--base $base_ref"
 
@@ -78,6 +83,10 @@ runs:
 
         if [ "$all_files" = "true" ]; then
           args="$args --all-files"
+        fi
+
+        if [ -n "$holder" ]; then
+          args="$args --holder '$holder'"
         fi
 
         python3 "${{ github.action_path }}/scripts/check_spdx_headers.py" $args

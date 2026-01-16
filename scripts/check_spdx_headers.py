@@ -412,10 +412,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Check all files in repository instead of only changed files",
     )
+    parser.add_argument(
+        "--holder",
+        type=str,
+        default="",
+        help="Only check files with matching copyright holder (supports wildcards like '*UnionTech*'). Empty means check all files.",
+    )
     args = parser.parse_args(argv)
     current_year = args.year
     debug = args.debug
     check_all_files = args.all_files
+    holder_pattern = args.holder
 
     base_ref = args.base
 
@@ -477,14 +484,26 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             ignored_count += 1
             continue
 
-        checked_count += 1
+        # Extract holder first to check if we should validate this file
         years_field: Optional[str] = None
         holder: Optional[str] = None
+        header_match = HEADER_REGEX.match(header_line.strip()) if header_line else None
+        if header_match:
+            holder = header_match.group("holder")
+
+        # If holder pattern is specified, check if this file's holder matches
+        if holder_pattern and holder:
+            if not fnmatch.fnmatch(holder, holder_pattern):
+                if debug:
+                    print(f"[DEBUG] ○ Ignored (holder '{holder}' does not match pattern '{holder_pattern}'): {rel_path}")
+                ignored_count += 1
+                continue
+
+        checked_count += 1
         license_ok = False
         file_violations_before = len(violations)
 
         if header_line:
-            header_match = HEADER_REGEX.match(header_line.strip())
             if header_match:
                 years_field = header_match.group("years")
                 header_prefix = header_match.group("prefix")

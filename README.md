@@ -55,6 +55,7 @@ jobs:
 - **year** (optional): Current year for validation (default: current UTC year)
 - **debug** (optional): Enable debug mode with detailed output for each file (default: `false`)
 - **all-files** (optional): Check all files in repository instead of only changed files (default: `false`)
+- **holder** (optional): Only check files with matching copyright holder, supports wildcards like `*UnionTech*` (default: empty, checks all files)
 
 ### Advanced Usage
 
@@ -71,6 +72,20 @@ jobs:
 - uses: zccrs/github-actions-spdx-checker@v1
   with:
     debug: true
+```
+
+**Check only specific copyright holder:**
+```yaml
+- uses: zccrs/github-actions-spdx-checker@v1
+  with:
+    holder: '*UnionTech*'
+```
+
+**Check with exact copyright holder match:**
+```yaml
+- uses: zccrs/github-actions-spdx-checker@v1
+  with:
+    holder: 'UnionTech Software Technology Co., Ltd.'
 ```
 
 ### Supported File Types
