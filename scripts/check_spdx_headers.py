@@ -542,7 +542,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if holder_pattern and holder:
             if not fnmatch.fnmatch(holder, holder_pattern):
                 if debug:
-                    print(f"[DEBUG] ○ Ignored (holder '{holder}' does not match pattern '{holder_pattern}'): {rel_path}")
+                    print(f"[DEBUG] ○ Ignored (holder mismatch): {rel_path}")
+                    print(f"    File holder: '{holder}'")
+                    print(f"    Pattern: '{holder_pattern}'")
+                    print(f"    Reason: File copyright holder does not match the specified holder pattern")
                 ignored_count += 1
                 continue
 

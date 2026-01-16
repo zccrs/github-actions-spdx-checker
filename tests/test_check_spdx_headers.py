@@ -277,5 +277,104 @@ class TestViolationClass(unittest.TestCase):
         self.assertIn("错误的中文", output)
 
 
+class TestHolderFiltering(unittest.TestCase):
+    """Test holder pattern filtering functionality."""
+
+    def test_holder_pattern_matching(self):
+        """Test holder pattern matching with various patterns."""
+        import fnmatch
+
+        # Test exact match
+        self.assertTrue(fnmatch.fnmatch("UnionTech Software", "UnionTech Software"))
+
+        # Test wildcard patterns
+        self.assertTrue(fnmatch.fnmatch("UnionTech Software Technology Co., Ltd.", "*UnionTech*"))
+        self.assertTrue(fnmatch.fnmatch("Alice Corp", "*Corp"))
+        self.assertTrue(fnmatch.fnmatch("Bob Inc.", "Bob*"))
+
+        # Test non-matching patterns
+        self.assertFalse(fnmatch.fnmatch("Alice Corp", "*UnionTech*"))
+        self.assertFalse(fnmatch.fnmatch("UnionTech Software", "*Microsoft*"))
+
+    def test_main_with_holder_filtering(self):
+        """Test main function with holder pattern filtering."""
+        from scripts.check_spdx_headers import main
+        from unittest.mock import patch
+        import tempfile
+        import os
+
+        # Create temporary files with different holders
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # File with UnionTech holder
+            file1 = os.path.join(tmp_dir, "file1.py")
+            with open(file1, "w") as f:
+                f.write("# SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.\n")
+                f.write("# SPDX-License-Identifier: GPL-3.0-or-later\n")
+                f.write("print('hello')\n")
+
+            # File with different holder
+            file2 = os.path.join(tmp_dir, "file2.py")
+            with open(file2, "w") as f:
+                f.write("# SPDX-FileCopyrightText: 2026 Microsoft Corporation\n")
+                f.write("# SPDX-License-Identifier: MIT\n")
+                f.write("print('world')\n")
+
+            # Mock git operations and change to temp directory
+            with patch('scripts.check_spdx_headers.run_git') as mock_git:
+                # Set up return values for git commands
+                def git_side_effect(*args):
+                    if args[0][0] == "rev-parse":
+                        return ""  # git rev-parse
+                    elif args[0][0] == "diff":
+                        return f"A\t{os.path.basename(file1)}\nA\t{os.path.basename(file2)}\n"  # git diff --name-status
+                    else:
+                        return ""
+
+                mock_git.side_effect = git_side_effect
+        import tempfile
+        import os
+        from io import StringIO
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # File with different holder
+            file1 = os.path.join(tmp_dir, "file1.py")
+            with open(file1, "w") as f:
+                f.write("# SPDX-FileCopyrightText: 2026 Alice Corporation\n")
+                f.write("# SPDX-License-Identifier: GPL-3.0-or-later\n")
+                f.write("print('test')\n")
+
+            with patch('scripts.check_spdx_headers.run_git') as mock_git:
+                # Set up return values for git commands
+                def git_side_effect(*args):
+                    if args[0][0] == "rev-parse":
+                        return ""  # git rev-parse
+                    elif args[0][0] == "diff":
+                        return f"A\t{os.path.basename(file1)}\n"  # git diff --name-status
+                    else:
+                        return ""
+
+                mock_git.side_effect = git_side_effect
+
+                old_cwd = os.getcwd()
+                os.chdir(tmp_dir)
+
+                try:
+                    # Capture stdout to check debug output
+                    captured_output = StringIO()
+                    with patch('sys.stdout', captured_output):
+                        result = main(['--base', 'HEAD', '--holder', '*UnionTech*', '--debug'])
+                        output = captured_output.getvalue()
+
+                    self.assertEqual(result, 0)  # Should pass as no files match holder pattern
+                    self.assertIn("Ignored (holder mismatch)", output)
+                    self.assertIn("File holder: 'Alice Corporation'", output)
+                    self.assertIn("Pattern: '*UnionTech*'", output)
+                    self.assertIn("Reason: File copyright holder does not match", output)
+
+                finally:
+                    os.chdir(old_cwd)
+
+
 if __name__ == "__main__":
     unittest.main()
