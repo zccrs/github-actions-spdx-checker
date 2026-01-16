@@ -8,7 +8,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 from scripts.check_spdx_headers import (
-    HEADER_REGEX,
+    SPDX_HEADER_REGEX,
+    COPYRIGHT_HEADER_REGEX,
     LICENSE_REGEX,
     Violation,
     extract_header_lines,
@@ -19,43 +20,63 @@ from scripts.check_spdx_headers import (
 
 
 class TestHeaderRegex(unittest.TestCase):
-    """Test SPDX header regex matching."""
+    """Test SPDX and Copyright header regex matching."""
 
-    def test_valid_header_single_year(self):
-        """Test matching valid header with single year."""
+    def test_valid_spdx_header_single_year(self):
+        """Test matching valid SPDX header with single year."""
         line = "// SPDX-FileCopyrightText: 2026 Alice Corp"
-        match = HEADER_REGEX.match(line)
+        match = SPDX_HEADER_REGEX.match(line)
         self.assertIsNotNone(match)
         self.assertEqual(match.group("prefix"), "//")
         self.assertEqual(match.group("years"), "2026")
         self.assertEqual(match.group("holder"), "Alice Corp")
 
-    def test_valid_header_year_range(self):
-        """Test matching valid header with year range."""
+    def test_valid_spdx_header_year_range(self):
+        """Test matching valid SPDX header with year range."""
         line = "# SPDX-FileCopyrightText: 2023-2026 Bob Inc."
-        match = HEADER_REGEX.match(line)
+        match = SPDX_HEADER_REGEX.match(line)
         self.assertIsNotNone(match)
         self.assertEqual(match.group("prefix"), "#")
         self.assertEqual(match.group("years"), "2023-2026")
         self.assertEqual(match.group("holder"), "Bob Inc.")
 
-    def test_valid_header_with_extra_spaces(self):
-        """Test matching header with extra spaces."""
+    def test_valid_spdx_header_with_extra_spaces(self):
+        """Test matching SPDX header with extra spaces."""
         line = "//  SPDX-FileCopyrightText:  2026  Charlie Ltd"
-        match = HEADER_REGEX.match(line)
+        match = SPDX_HEADER_REGEX.match(line)
         self.assertIsNotNone(match)
         self.assertEqual(match.group("years"), "2026")
+
+    def test_valid_copyright_header_single_year(self):
+        """Test matching valid Copyright (C) header with single year."""
+        line = "// Copyright (C) 2026 UnionTech Software Technology Co., Ltd."
+        match = COPYRIGHT_HEADER_REGEX.match(line)
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group("prefix"), "//")
+        self.assertEqual(match.group("years"), "2026")
+        self.assertEqual(match.group("holder"), "UnionTech Software Technology Co., Ltd.")
+
+    def test_valid_copyright_header_year_range(self):
+        """Test matching valid Copyright (C) header with year range."""
+        line = "# Copyright (C) 2020-2026 Some Company"
+        match = COPYRIGHT_HEADER_REGEX.match(line)
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group("prefix"), "#")
+        self.assertEqual(match.group("years"), "2020-2026")
+        self.assertEqual(match.group("holder"), "Some Company")
 
     def test_invalid_header_wrong_format(self):
         """Test that malformed headers don't match."""
         line = "// Copyright: 2026 Alice Corp"
-        match = HEADER_REGEX.match(line)
+        match = SPDX_HEADER_REGEX.match(line)
+        self.assertIsNone(match)
+        match = COPYRIGHT_HEADER_REGEX.match(line)
         self.assertIsNone(match)
 
     def test_invalid_header_missing_holder(self):
         """Test header with missing holder."""
         line = "// SPDX-FileCopyrightText: 2026"
-        match = HEADER_REGEX.match(line)
+        match = SPDX_HEADER_REGEX.match(line)
         self.assertIsNone(match)
 
 

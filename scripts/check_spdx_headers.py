@@ -22,8 +22,15 @@ import sys
 from typing import Iterable, List, Optional, Sequence, Tuple
 
 COMMENT_PREFIXES = ("//", "#")
-HEADER_REGEX = re.compile(
+# SPDX format: // SPDX-FileCopyrightText: 2026 Company Name
+SPDX_HEADER_REGEX = re.compile(
     r"^(?P<prefix>//|#)\s*SPDX-FileCopyrightText:\s*"
+    r"(?P<years>\d{4}(?:-\d{4})?)\s+"
+    r"(?P<holder>.+)$"
+)
+# Traditional Copyright format: // Copyright (C) 2025 Company Name
+COPYRIGHT_HEADER_REGEX = re.compile(
+    r"^(?P<prefix>//|#)\s*Copyright\s*\(C\)\s*"
     r"(?P<years>\d{4}(?:-\d{4})?)\s+"
     r"(?P<holder>.+)$"
 )
@@ -112,7 +119,8 @@ def extract_header_lines(path: pathlib.Path) -> Tuple[Optional[str], Optional[st
         line = raw_line.strip("\ufeff\n\r")
         if not line.strip():
             continue
-        if header_line is None and HEADER_REGEX.match(line):
+        # Check for both SPDX and traditional Copyright formats
+        if header_line is None and (SPDX_HEADER_REGEX.match(line) or COPYRIGHT_HEADER_REGEX.match(line)):
             header_line = line
             continue
         if header_line and license_line is None and LICENSE_REGEX.match(line):
