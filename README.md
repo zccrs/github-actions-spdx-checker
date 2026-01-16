@@ -74,7 +74,12 @@ jobs:
 - **year** (optional): Current year for validation (default: current UTC year)
 - **debug** (optional): Enable debug mode with detailed output for each file (default: `false`)
 - **all-files** (optional): Check all files in repository instead of only changed files (default: `false`)
-- **holder** (optional): Only check files with matching copyright holder, supports wildcards like `*UnionTech*` (default: empty, checks all files)
+- **holder** (optional): Only check files with matching copyright holder. Supports wildcards:
+  - `*UnionTech*` - Matches any holder containing "UnionTech"
+  - `*Corp` - Matches holders ending with "Corp"
+  - `Microsoft*` - Matches holders starting with "Microsoft"
+  - `Company Name` - Exact match for "Company Name"
+  - Empty (default) - Checks all files regardless of holder
 
 ### Advanced Usage
 
@@ -105,6 +110,29 @@ jobs:
 - uses: zccrs/github-actions-spdx-checker@v1
   with:
     holder: 'UnionTech Software Technology Co., Ltd.'
+```
+
+**Multiple holder patterns (check multiple companies):**
+```yaml
+# Option 1: Use broader wildcard pattern
+- uses: zccrs/github-actions-spdx-checker@v1
+  with:
+    holder: '*Corp*'  # Matches "Alice Corp", "Microsoft Corporation", etc.
+
+# Option 2: Use specific pattern
+- uses: zccrs/github-actions-spdx-checker@v1
+  with:
+    holder: '*Software*'  # Matches any holder containing "Software"
+```
+
+**Combine holder filtering with other options:**
+```yaml
+- uses: zccrs/github-actions-spdx-checker@v1
+  with:
+    holder: '*UnionTech*'
+    debug: true
+    all-files: true
+    exclude: 'vendor/**,node_modules/**'
 ```
 
 ### Supported File Types
@@ -143,6 +171,15 @@ python3 scripts/check_spdx_headers.py --base origin/main --debug
 
 # Specify custom year
 python3 scripts/check_spdx_headers.py --base origin/main --year 2024
+
+# Check only files with specific copyright holder
+python3 scripts/check_spdx_headers.py --base origin/main --holder '*UnionTech*'
+
+# Check with exact holder match
+python3 scripts/check_spdx_headers.py --base origin/main --holder 'Microsoft Corporation'
+
+# Combine holder filtering with debug mode
+python3 scripts/check_spdx_headers.py --all-files --debug --holder '*Software*'
 
 # Combine options
 python3 scripts/check_spdx_headers.py --all-files --debug --exclude 'vendor/**' 'node_modules/**'
