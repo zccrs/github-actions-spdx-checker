@@ -176,11 +176,13 @@ def validate_new_file(
                 path,
                 (
                     f"New files must use a single year (no range) in the SPDX header.\n"
+                    f"  Reason: This is a newly added file (current year: {current_year})\n"
                     f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                     f"  Expected: // {correct_header} (or # for Python/Shell)"
                 ),
                 (
                     f"新增文件的 SPDX 版权头必须只包含当前年份，不能使用年份范围。\n"
+                    f"  原因：这是新增的文件（当前年份：{current_year}）\n"
                     f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                     f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                 ),
@@ -193,11 +195,13 @@ def validate_new_file(
                 path,
                 (
                     f"SPDX header year should be {current_year} for new files.\n"
+                    f"  Reason: This is a newly added file created in {current_year}\n"
                     f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                     f"  Expected: // {correct_header} (or # for Python/Shell)"
                 ),
                 (
                     f"新增文件的 SPDX 版权年份应为 {current_year}。\n"
+                    f"  原因：这是在 {current_year} 年新增的文件\n"
                     f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                     f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                 ),
@@ -239,11 +243,13 @@ def validate_modified_file(
                         path,
                         (
                             f"File predates current year; update SPDX header to use a year range {range_text}.\n"
+                            f"  Reason: File was created in {creation_year}, modified in {current_year}\n"
                             f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                             f"  Expected: // {correct_header} (or # for Python/Shell)"
                         ),
                         (
                             f"文件创建年份早于当前年份，请将 SPDX 版权头更新为年份范围 {range_text}。\n"
+                            f"  原因：文件创建于 {creation_year} 年，在 {current_year} 年修改\n"
                             f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                             f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                         ),
@@ -256,11 +262,13 @@ def validate_modified_file(
                         path,
                         (
                             f"SPDX header year should be {current_year}.\n"
+                            f"  Reason: File was modified in {current_year}\n"
                             f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                             f"  Expected: // {correct_header} (or # for Python/Shell)"
                         ),
                         (
                             f"请将 SPDX 版权年份更新为 {current_year}。\n"
+                            f"  原因：文件在 {current_year} 年被修改\n"
                             f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                             f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                         ),
@@ -274,11 +282,13 @@ def validate_modified_file(
                     path,
                     (
                         f"File has earlier creation year; use range format {range_text}.\n"
+                        f"  Reason: File was created in {creation_year}, now modified in {current_year}\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                         f"  Expected: // {correct_header} (or # for Python/Shell)"
                     ),
                     (
                         f"该文件创建于较早年份，应使用年份范围格式 {range_text}。\n"
+                        f"  原因：文件创建于 {creation_year} 年，当前在 {current_year} 年修改\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                         f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                     ),
@@ -309,11 +319,13 @@ def validate_modified_file(
                     path,
                     (
                         f"Update SPDX year range end to {current_year}.\n"
+                        f"  Reason: File was modified in {current_year}, range end should reflect this\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                         f"  Expected: // {correct_header} (or # for Python/Shell)"
                     ),
                     (
                         f"请将 SPDX 年份范围的结束年份更新为 {current_year}。\n"
+                        f"  原因：文件在 {current_year} 年被修改，年份范围应反映最新修改时间\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                         f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                     ),
@@ -326,11 +338,13 @@ def validate_modified_file(
                     path,
                     (
                         f"Year range should start at the file creation year {creation_year}.\n"
+                        f"  Reason: File was first created in {creation_year} (from git history)\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                         f"  Expected: // {correct_header} (or # for Python/Shell)"
                     ),
                     (
                         f"年份范围应以文件创建年份 {creation_year} 开始。\n"
+                        f"  原因：根据 git 历史记录，文件首次创建于 {creation_year} 年\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                         f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                     ),
@@ -343,11 +357,13 @@ def validate_modified_file(
                     path,
                     (
                         f"Year range uses identical start and end; use single year format instead.\n"
+                        f"  Reason: When start and end years are the same, use single year format\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
                         f"  Expected: // {correct_header} (or # for Python/Shell)"
                     ),
                     (
                         f"年份范围的起止相同，应改为单年份格式。\n"
+                        f"  原因：起止年份相同时应使用单年份格式\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
                         f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
                     ),
