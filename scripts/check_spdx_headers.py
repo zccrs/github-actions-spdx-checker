@@ -162,36 +162,6 @@ def parse_years(year_field: str) -> Tuple[int, Optional[int]]:
     return int(year_field), None
 
 
-def detect_header_format(header_line: Optional[str]) -> str:
-    """Detect whether the header uses SPDX or Copyright (C) format.
-
-    Returns 'spdx' or 'copyright'.
-    """
-    if not header_line:
-        return 'spdx'  # Default to SPDX format
-
-    if COPYRIGHT_HEADER_REGEX.match(header_line.strip()):
-        return 'copyright'
-    return 'spdx'
-
-
-def format_copyright_header(years: str, holder: str, header_format: str) -> str:
-    """Format copyright header in the detected format.
-
-    Args:
-        years: Year or year range (e.g., '2026' or '2023-2026')
-        holder: Copyright holder name
-        header_format: 'spdx' or 'copyright'
-
-    Returns:
-        Formatted header text (without comment prefix)
-    """
-    if header_format == 'copyright':
-        return f"Copyright (C) {years} {holder}"
-    else:
-        return f"SPDX-FileCopyrightText: {years} {holder}"
-
-
 def validate_new_file(
     path: str,
     years_field: Optional[str],
@@ -200,16 +170,20 @@ def validate_new_file(
     header_line: Optional[str],
     holder: Optional[str],
     violations: List[Violation],
+    is_copyright_format: bool = False,
+    header_prefix: str = "//",
 ) -> None:
     # If years_field is None, it means the header format was already reported as invalid
     # or the file was skipped, so we don't need to report again
     if years_field is None:
         return
 
-    header_format = detect_header_format(header_line)
     start_year, end_year = parse_years(years_field)
     if end_year is not None:
-        correct_header = format_copyright_header(str(current_year), holder or 'Your Company Name', header_format)
+        if is_copyright_format:
+            correct_header = f"Copyright (C) {current_year} {holder or 'Your Company Name'}"
+        else:
+            correct_header = f"SPDX-FileCopyrightText: {current_year} {holder or 'Your Company Name'}"
         violations.append(
             Violation(
                 path,
@@ -217,18 +191,21 @@ def validate_new_file(
                     f"New files must use a single year (no range) in the SPDX header.\n"
                     f"  Reason: This is a newly added file (current year: {current_year})\n"
                     f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                    f"  Expected: // {correct_header} (or # for Python/Shell)"
+                    f"  Expected: {header_prefix} {correct_header}"
                 ),
                 (
                     f"新增文件的 SPDX 版权头必须只包含当前年份，不能使用年份范围。\n"
                     f"  原因：这是新增的文件（当前年份：{current_year}）\n"
                     f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                    f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                    f"  建议修改：{header_prefix} {correct_header}"
                 ),
             )
         )
     elif start_year != current_year:
-        correct_header = format_copyright_header(str(current_year), holder or 'Your Company Name', header_format)
+        if is_copyright_format:
+            correct_header = f"Copyright (C) {current_year} {holder or 'Your Company Name'}"
+        else:
+            correct_header = f"SPDX-FileCopyrightText: {current_year} {holder or 'Your Company Name'}"
         violations.append(
             Violation(
                 path,
@@ -236,13 +213,13 @@ def validate_new_file(
                     f"SPDX header year should be {current_year} for new files.\n"
                     f"  Reason: This is a newly added file created in {current_year}\n"
                     f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                    f"  Expected: // {correct_header} (or # for Python/Shell)"
+                    f"  Expected: {header_prefix} {correct_header}"
                 ),
                 (
                     f"新增文件的 SPDX 版权年份应为 {current_year}。\n"
                     f"  原因：这是在 {current_year} 年新增的文件\n"
                     f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                    f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                    f"  建议修改：{header_prefix} {correct_header}"
                 ),
             )
         )
@@ -265,19 +242,23 @@ def validate_modified_file(
     header_line: Optional[str],
     holder: Optional[str],
     violations: List[Violation],
+    is_copyright_format: bool = False,
+    header_prefix: str = "//",
 ) -> None:
     # If years_field is None, it means the header format was already reported as invalid
     # or the file was skipped, so we don't need to report again
     if years_field is None:
         return
 
-    header_format = detect_header_format(header_line)
     start_year, end_year = parse_years(years_field)
     if end_year is None:
         if start_year != current_year:
             if creation_year and creation_year < current_year:
                 range_text = f"{creation_year}-{current_year}"
-                correct_header = format_copyright_header(range_text, holder or 'Your Company Name', header_format)
+                if is_copyright_format:
+                    correct_header = f"Copyright (C) {range_text} {holder or 'Your Company Name'}"
+                else:
+                    correct_header = f"SPDX-FileCopyrightText: {range_text} {holder or 'Your Company Name'}"
                 violations.append(
                     Violation(
                         path,
@@ -285,18 +266,21 @@ def validate_modified_file(
                             f"File predates current year; update SPDX header to use a year range {range_text}.\n"
                             f"  Reason: File was created in {creation_year}, modified in {current_year}\n"
                             f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                            f"  Expected: // {correct_header} (or # for Python/Shell)"
+                            f"  Expected: {header_prefix} {correct_header}"
                         ),
                         (
                             f"文件创建年份早于当前年份，请将 SPDX 版权头更新为年份范围 {range_text}。\n"
                             f"  原因：文件创建于 {creation_year} 年，在 {current_year} 年修改\n"
                             f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                            f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                            f"  建议修改：{header_prefix} {correct_header}"
                         ),
                     )
                 )
             else:
-                correct_header = format_copyright_header(str(current_year), holder or 'Your Company Name', header_format)
+                if is_copyright_format:
+                    correct_header = f"Copyright (C) {current_year} {holder or 'Your Company Name'}"
+                else:
+                    correct_header = f"SPDX-FileCopyrightText: {current_year} {holder or 'Your Company Name'}"
                 violations.append(
                     Violation(
                         path,
@@ -304,19 +288,22 @@ def validate_modified_file(
                             f"SPDX header year should be {current_year}.\n"
                             f"  Reason: File was modified in {current_year}\n"
                             f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                            f"  Expected: // {correct_header} (or # for Python/Shell)"
+                            f"  Expected: {header_prefix} {correct_header}"
                         ),
                         (
                             f"请将 SPDX 版权年份更新为 {current_year}。\n"
                             f"  原因：文件在 {current_year} 年被修改\n"
                             f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                            f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                            f"  建议修改：{header_prefix} {correct_header}"
                         ),
                     )
                 )
         elif creation_year and creation_year < current_year:
             range_text = f"{creation_year}-{current_year}"
-            correct_header = format_copyright_header(range_text, holder or 'Your Company Name', header_format)
+            if is_copyright_format:
+                correct_header = f"Copyright (C) {range_text} {holder or 'Your Company Name'}"
+            else:
+                correct_header = f"SPDX-FileCopyrightText: {range_text} {holder or 'Your Company Name'}"
             violations.append(
                 Violation(
                     path,
@@ -324,36 +311,42 @@ def validate_modified_file(
                         f"File has earlier creation year; use range format {range_text}.\n"
                         f"  Reason: File was created in {creation_year}, now modified in {current_year}\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                        f"  Expected: // {correct_header} (or # for Python/Shell)"
+                        f"  Expected: {header_prefix} {correct_header}"
                     ),
                     (
                         f"该文件创建于较早年份，应使用年份范围格式 {range_text}。\n"
                         f"  原因：文件创建于 {creation_year} 年，当前在 {current_year} 年修改\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                        f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                        f"  建议修改：{header_prefix} {correct_header}"
                     ),
                 )
             )
     else:
         if start_year > end_year:
-            correct_header = format_copyright_header(f"{end_year}-{start_year}", holder or 'Your Company Name', header_format)
+            if is_copyright_format:
+                correct_header = f"Copyright (C) {end_year}-{start_year} {holder or 'Your Company Name'}"
+            else:
+                correct_header = f"SPDX-FileCopyrightText: {end_year}-{start_year} {holder or 'Your Company Name'}"
             violations.append(
                 Violation(
                     path,
                     (
                         f"Invalid SPDX year range (start year greater than end year).\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                        f"  Expected: // {correct_header} (or # for Python/Shell)"
+                        f"  Expected: {header_prefix} {correct_header}"
                     ),
                     (
                         f"SPDX 年份范围不合法：起始年份大于结束年份。\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                        f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                        f"  建议修改：{header_prefix} {correct_header}"
                     ),
                 )
             )
         if end_year != current_year:
-            correct_header = format_copyright_header(f"{start_year}-{current_year}", holder or 'Your Company Name', header_format)
+            if is_copyright_format:
+                correct_header = f"Copyright (C) {start_year}-{current_year} {holder or 'Your Company Name'}"
+            else:
+                correct_header = f"SPDX-FileCopyrightText: {start_year}-{current_year} {holder or 'Your Company Name'}"
             violations.append(
                 Violation(
                     path,
@@ -361,18 +354,21 @@ def validate_modified_file(
                         f"Update SPDX year range end to {current_year}.\n"
                         f"  Reason: File was modified in {current_year}, range end should reflect this\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                        f"  Expected: // {correct_header} (or # for Python/Shell)"
+                        f"  Expected: {header_prefix} {correct_header}"
                     ),
                     (
                         f"请将 SPDX 年份范围的结束年份更新为 {current_year}。\n"
                         f"  原因：文件在 {current_year} 年被修改，年份范围应反映最新修改时间\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                        f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                        f"  建议修改：{header_prefix} {correct_header}"
                     ),
                 )
             )
         if creation_year and start_year != creation_year:
-            correct_header = format_copyright_header(f"{creation_year}-{end_year}", holder or 'Your Company Name', header_format)
+            if is_copyright_format:
+                correct_header = f"Copyright (C) {creation_year}-{end_year} {holder or 'Your Company Name'}"
+            else:
+                correct_header = f"SPDX-FileCopyrightText: {creation_year}-{end_year} {holder or 'Your Company Name'}"
             violations.append(
                 Violation(
                     path,
@@ -380,18 +376,21 @@ def validate_modified_file(
                         f"Year range should start at the file creation year {creation_year}.\n"
                         f"  Reason: File was first created in {creation_year} (from git history)\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                        f"  Expected: // {correct_header} (or # for Python/Shell)"
+                        f"  Expected: {header_prefix} {correct_header}"
                     ),
                     (
                         f"年份范围应以文件创建年份 {creation_year} 开始。\n"
                         f"  原因：根据 git 历史记录，文件首次创建于 {creation_year} 年\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                        f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                        f"  建议修改：{header_prefix} {correct_header}"
                     ),
                 )
             )
         if start_year == end_year:
-            correct_header = format_copyright_header(str(start_year), holder or 'Your Company Name', header_format)
+            if is_copyright_format:
+                correct_header = f"Copyright (C) {start_year} {holder or 'Your Company Name'}"
+            else:
+                correct_header = f"SPDX-FileCopyrightText: {start_year} {holder or 'Your Company Name'}"
             violations.append(
                 Violation(
                     path,
@@ -399,13 +398,13 @@ def validate_modified_file(
                         f"Year range uses identical start and end; use single year format instead.\n"
                         f"  Reason: When start and end years are the same, use single year format\n"
                         f"  Current: {header_line.strip() if header_line else 'N/A'}\n"
-                        f"  Expected: // {correct_header} (or # for Python/Shell)"
+                        f"  Expected: {header_prefix} {correct_header}"
                     ),
                     (
                         f"年份范围的起止相同，应改为单年份格式。\n"
                         f"  原因：起止年份相同时应使用单年份格式\n"
                         f"  当前内容：{header_line.strip() if header_line else 'N/A'}\n"
-                        f"  建议修改：// {correct_header}（Python/Shell 文件用 #）"
+                        f"  建议修改：{header_prefix} {correct_header}"
                     ),
                 )
             )
@@ -527,7 +526,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         # Extract holder first to check if we should validate this file
         years_field: Optional[str] = None
         holder: Optional[str] = None
-        header_match = HEADER_REGEX.match(header_line.strip()) if header_line else None
+        header_match = None
+        is_copyright_format = False
+        if header_line:
+            # Try SPDX format first, then traditional Copyright format
+            header_match = SPDX_HEADER_REGEX.match(header_line.strip())
+            if not header_match:
+                header_match = COPYRIGHT_HEADER_REGEX.match(header_line.strip())
+                if header_match:
+                    is_copyright_format = True
         if header_match:
             holder = header_match.group("holder")
 
@@ -596,14 +603,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         status = status.upper()
         if status == "A":
-            validate_new_file(rel_path, years_field, license_ok, current_year, header_line, holder, violations)
+            validate_new_file(rel_path, years_field, license_ok, current_year, header_line, holder, violations, is_copyright_format, header_prefix or "//")
         elif status == "M":
             creation_year = get_creation_year(rel_path)
-            validate_modified_file(rel_path, years_field, license_ok, creation_year, current_year, header_line, holder, violations)
+            validate_modified_file(rel_path, years_field, license_ok, creation_year, current_year, header_line, holder, violations, is_copyright_format, header_prefix or "//")
         elif status == "C":
             # Treat copies as modifications.
             creation_year = get_creation_year(rel_path)
-            validate_modified_file(rel_path, years_field, license_ok, creation_year, current_year, header_line, holder, violations)
+            validate_modified_file(rel_path, years_field, license_ok, creation_year, current_year, header_line, holder, violations, is_copyright_format, header_prefix or "//")
 
         # Check if this file added new violations
         file_violations_after = len(violations)
