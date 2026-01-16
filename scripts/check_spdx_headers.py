@@ -162,6 +162,36 @@ def parse_years(year_field: str) -> Tuple[int, Optional[int]]:
     return int(year_field), None
 
 
+def detect_header_format(header_line: Optional[str]) -> str:
+    """Detect whether the header uses SPDX or Copyright (C) format.
+
+    Returns 'spdx' or 'copyright'.
+    """
+    if not header_line:
+        return 'spdx'  # Default to SPDX format
+
+    if COPYRIGHT_HEADER_REGEX.match(header_line.strip()):
+        return 'copyright'
+    return 'spdx'
+
+
+def format_copyright_header(years: str, holder: str, header_format: str) -> str:
+    """Format copyright header in the detected format.
+
+    Args:
+        years: Year or year range (e.g., '2026' or '2023-2026')
+        holder: Copyright holder name
+        header_format: 'spdx' or 'copyright'
+
+    Returns:
+        Formatted header text (without comment prefix)
+    """
+    if header_format == 'copyright':
+        return f"Copyright (C) {years} {holder}"
+    else:
+        return f"SPDX-FileCopyrightText: {years} {holder}"
+
+
 def validate_new_file(
     path: str,
     years_field: Optional[str],
@@ -176,9 +206,10 @@ def validate_new_file(
     if years_field is None:
         return
 
+    header_format = detect_header_format(header_line)
     start_year, end_year = parse_years(years_field)
     if end_year is not None:
-        correct_header = f"SPDX-FileCopyrightText: {current_year} {holder or 'Your Company Name'}"
+        correct_header = format_copyright_header(str(current_year), holder or 'Your Company Name', header_format)
         violations.append(
             Violation(
                 path,
@@ -197,7 +228,7 @@ def validate_new_file(
             )
         )
     elif start_year != current_year:
-        correct_header = f"SPDX-FileCopyrightText: {current_year} {holder or 'Your Company Name'}"
+        correct_header = format_copyright_header(str(current_year), holder or 'Your Company Name', header_format)
         violations.append(
             Violation(
                 path,
@@ -240,12 +271,13 @@ def validate_modified_file(
     if years_field is None:
         return
 
+    header_format = detect_header_format(header_line)
     start_year, end_year = parse_years(years_field)
     if end_year is None:
         if start_year != current_year:
             if creation_year and creation_year < current_year:
                 range_text = f"{creation_year}-{current_year}"
-                correct_header = f"SPDX-FileCopyrightText: {range_text} {holder or 'Your Company Name'}"
+                correct_header = format_copyright_header(range_text, holder or 'Your Company Name', header_format)
                 violations.append(
                     Violation(
                         path,
@@ -264,7 +296,7 @@ def validate_modified_file(
                     )
                 )
             else:
-                correct_header = f"SPDX-FileCopyrightText: {current_year} {holder or 'Your Company Name'}"
+                correct_header = format_copyright_header(str(current_year), holder or 'Your Company Name', header_format)
                 violations.append(
                     Violation(
                         path,
@@ -284,7 +316,7 @@ def validate_modified_file(
                 )
         elif creation_year and creation_year < current_year:
             range_text = f"{creation_year}-{current_year}"
-            correct_header = f"SPDX-FileCopyrightText: {range_text} {holder or 'Your Company Name'}"
+            correct_header = format_copyright_header(range_text, holder or 'Your Company Name', header_format)
             violations.append(
                 Violation(
                     path,
@@ -304,7 +336,7 @@ def validate_modified_file(
             )
     else:
         if start_year > end_year:
-            correct_header = f"SPDX-FileCopyrightText: {end_year}-{start_year} {holder or 'Your Company Name'}"
+            correct_header = format_copyright_header(f"{end_year}-{start_year}", holder or 'Your Company Name', header_format)
             violations.append(
                 Violation(
                     path,
@@ -321,7 +353,7 @@ def validate_modified_file(
                 )
             )
         if end_year != current_year:
-            correct_header = f"SPDX-FileCopyrightText: {start_year}-{current_year} {holder or 'Your Company Name'}"
+            correct_header = format_copyright_header(f"{start_year}-{current_year}", holder or 'Your Company Name', header_format)
             violations.append(
                 Violation(
                     path,
@@ -340,7 +372,7 @@ def validate_modified_file(
                 )
             )
         if creation_year and start_year != creation_year:
-            correct_header = f"SPDX-FileCopyrightText: {creation_year}-{end_year} {holder or 'Your Company Name'}"
+            correct_header = format_copyright_header(f"{creation_year}-{end_year}", holder or 'Your Company Name', header_format)
             violations.append(
                 Violation(
                     path,
@@ -359,7 +391,7 @@ def validate_modified_file(
                 )
             )
         if start_year == end_year:
-            correct_header = f"SPDX-FileCopyrightText: {start_year} {holder or 'Your Company Name'}"
+            correct_header = format_copyright_header(str(start_year), holder or 'Your Company Name', header_format)
             violations.append(
                 Violation(
                     path,
