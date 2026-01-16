@@ -446,6 +446,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     violations: List[Violation] = []
     checked_count = 0
     skipped_count = 0
+    ignored_count = 0
     passed_count = 0
 
     for status, rel_path in changed:
@@ -469,11 +470,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         header_line, license_line = extract_header_lines(path_obj)
 
-        # Skip files without SPDX headers - they are not in scope for validation
+        # Ignore files without SPDX headers - they are not in scope for validation
         if not header_line:
             if debug:
-                print(f"[DEBUG] ⊘ Skipped (no SPDX header): {rel_path}")
-            skipped_count += 1
+                print(f"[DEBUG] ○ Ignored (no SPDX header): {rel_path}")
+            ignored_count += 1
             continue
 
         checked_count += 1
@@ -556,7 +557,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             passed_count += 1
 
     if debug:
-        print(f"\n[DEBUG] Summary: {checked_count} checked, {passed_count} passed, {len(violations)} failed, {skipped_count} skipped")
+        print(f"\n[DEBUG] Summary: {checked_count} checked, {passed_count} passed, {len(violations)} failed, {skipped_count} skipped, {ignored_count} ignored")
 
     # Print summary for all modes
     print("\n" + "=" * 60)
@@ -565,7 +566,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"Checked / 已检查:  {checked_count}")
     print(f"Passed / 通过:     {passed_count}")
     print(f"Failed / 失败:     {len(violations)}")
-    print(f"Skipped / 跳过:    {skipped_count}")
+    print(f"Skipped / 跳过:    {skipped_count}  (excluded by patterns)")
+    print(f"Ignored / 忽略:    {ignored_count}  (no SPDX header found)")
     print("=" * 60)
 
     if violations:
