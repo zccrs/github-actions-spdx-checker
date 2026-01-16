@@ -63,30 +63,35 @@ runs:
         all_files="${{ inputs.all-files }}"
         holder="${{ inputs.holder }}"
 
-        args="--base $base_ref"
+        # Use array to properly handle arguments with spaces
+        args=("--base" "$base_ref")
 
         if [ -n "$include_patterns" ]; then
-          args="$args --include $(echo $include_patterns | tr ',' ' ')"
+          IFS=',' read -ra PATTERNS <<< "$include_patterns"
+          args+=("--include")
+          args+=("${PATTERNS[@]}")
         fi
 
         if [ -n "$exclude_patterns" ]; then
-          args="$args --exclude $(echo $exclude_patterns | tr ',' ' ')"
+          IFS=',' read -ra PATTERNS <<< "$exclude_patterns"
+          args+=("--exclude")
+          args+=("${PATTERNS[@]}")
         fi
 
         if [ -n "$year" ]; then
-          args="$args --year $year"
+          args+=("--year" "$year")
         fi
 
         if [ "$debug" = "true" ]; then
-          args="$args --debug"
+          args+=("--debug")
         fi
 
         if [ "$all_files" = "true" ]; then
-          args="$args --all-files"
+          args+=("--all-files")
         fi
 
         if [ -n "$holder" ]; then
-          args="$args --holder '$holder'"
+          args+=("--holder" "$holder")
         fi
 
-        python3 "${{ github.action_path }}/scripts/check_spdx_headers.py" $args
+        python3 "${{ github.action_path }}/scripts/check_spdx_headers.py" "${args[@]}"
