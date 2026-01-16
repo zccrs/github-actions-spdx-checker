@@ -493,6 +493,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     checked_count = 0
     skipped_count = 0
     ignored_count = 0
+    holder_ignored_count = 0
     passed_count = 0
 
     for status, rel_path in changed:
@@ -546,7 +547,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     print(f"    File holder: '{holder}'")
                     print(f"    Pattern: '{holder_pattern}'")
                     print(f"    Reason: File copyright holder does not match the specified holder pattern")
-                ignored_count += 1
+                holder_ignored_count += 1
                 continue
 
         checked_count += 1
@@ -626,7 +627,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             passed_count += 1
 
     if debug:
-        print(f"\n[DEBUG] Summary: {checked_count} checked, {passed_count} passed, {len(violations)} failed, {skipped_count} skipped, {ignored_count} ignored")
+        print(f"[DEBUG] Summary: {checked_count} checked, {passed_count} passed, {len(violations)} failed, {skipped_count} skipped, {ignored_count} ignored (no header), {holder_ignored_count} ignored (holder mismatch)")
 
     # Print summary for all modes
     print("\n" + "=" * 60)
@@ -637,6 +638,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"Failed / 失败:     {len(violations)}")
     print(f"Skipped / 跳过:    {skipped_count}  (excluded by patterns)")
     print(f"Ignored / 忽略:    {ignored_count}  (no SPDX header found)")
+    if holder_ignored_count > 0:
+        print(f"Ignored / 忽略:    {holder_ignored_count}  (holder pattern mismatch)")
     print("=" * 60)
 
     if violations:
