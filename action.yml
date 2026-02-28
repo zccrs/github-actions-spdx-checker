@@ -13,7 +13,7 @@ inputs:
   base:
     description: 'Base reference to diff against (e.g., origin/main)'
     required: false
-    default: 'origin/main'
+    default: ''
   include:
     description: 'Comma-separated list of glob patterns to include'
     required: false
@@ -36,6 +36,10 @@ inputs:
     default: 'false'
   holder:
     description: 'Only check files with matching copyright holder (supports wildcards like *UnionTech*). Empty means check all files.'
+    required: false
+    default: ''
+  head:
+    description: 'Head reference to diff against (default: environment GITHUB_HEAD_REF or HEAD)'
     required: false
     default: ''
 
@@ -62,9 +66,11 @@ runs:
         debug="${{ inputs.debug }}"
         all_files="${{ inputs.all-files }}"
         holder="${{ inputs.holder }}"
+        head_ref="${{ inputs.head }}"
 
         # Use array to properly handle arguments with spaces
         args=("--base" "$base_ref")
+        args+=("--head" "$head_ref")
 
         if [ -n "$include_patterns" ]; then
           IFS=',' read -ra PATTERNS <<< "$include_patterns"
