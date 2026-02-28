@@ -68,10 +68,10 @@ def run_git(args: Sequence[str]) -> str:
     return result.stdout
 
 
-def list_changed_files(base: str) -> List[Tuple[str, str]]:
+def list_changed_files(base: str, head: str) -> List[Tuple[str, str]]:
     """Return a list of (status, path) for files changed since base."""
 
-    diff_output = run_git(["diff", "--name-status", f"{base}...HEAD", "--diff-filter=ACMR"])
+    diff_output = run_git(["diff", "--name-status", f"{base}...{head}", "--diff-filter=ACMR"])
     entries: List[Tuple[str, str]] = []
     for line in diff_output.splitlines():
         if not line.strip():
@@ -457,13 +457,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         default="",
         help="Only check files with matching copyright holder (supports wildcards like '*UnionTech*'). Empty means check all files.",
     )
+    parser.add_argument(
+        "--head",
+        default=os.environ.get("GITHUB_HEAD_REF", "HEAD"),
+        help="Head reference to diff against (default: environment GITHUB_HEAD_REF or HEAD)",
+    )
     args = parser.parse_args(argv)
     current_year = args.year
     debug = args.debug
     check_all_files = args.all_files
     holder_pattern = args.holder
 
-    base_ref = args.base
+    base_ref = args.base or parser.get_default('base')
+    head_ref = args.head or parser.get_default('head')
 
     if check_all_files:
         if debug:
@@ -476,11 +482,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(exc, file=sys.stderr)
             return 2
         if debug:
-            print(f"[DEBUG] Running in diff mode: checking files changed since {base_ref}")
-        changed = list_changed_files(base_ref)
+            print(f"[DEBUG] Running in diff mode: checking files changed since {base_ref}...{head_ref}")
+        changed = list_changed_files(base_ref, head_ref)
 
     if not changed:
-        print("No applicable file changes detected; skipping SPDX validation.")
+        print(f"No applicable file changes detected since {base_ref}...{head_ref}; skipping SPDX validation.")
         return 0
 
     if debug:
