@@ -25,13 +25,13 @@ COMMENT_PREFIXES = ("//", "#")
 # SPDX format: // SPDX-FileCopyrightText: 2026 Company Name
 SPDX_HEADER_REGEX = re.compile(
     r"^(?P<prefix>//|#)\s*SPDX-FileCopyrightText:\s*"
-    r"(?P<years>\d{4}(?:-\d{4})?)\s+"
+    r"(?P<years>\d{4}(?:\s*-\s*\d{4})?)\s+"
     r"(?P<holder>.+)$"
 )
 # Traditional Copyright format: // Copyright (C) 2025 Company Name
 COPYRIGHT_HEADER_REGEX = re.compile(
     r"^(?P<prefix>//|#)\s*Copyright\s*\(C\)\s*"
-    r"(?P<years>\d{4}(?:-\d{4})?)\s+"
+    r"(?P<years>\d{4}(?:\s*-\s*\d{4})?)\s+"
     r"(?P<holder>.+)$"
 )
 LICENSE_REGEX = re.compile(
@@ -158,8 +158,8 @@ def parse_years(year_field: str) -> Tuple[int, Optional[int]]:
 
     if "-" in year_field:
         start, end = year_field.split("-", 1)
-        return int(start), int(end)
-    return int(year_field), None
+        return int(start.strip()), int(end.strip())
+    return int(year_field.strip()), None
 
 
 def validate_new_file(
