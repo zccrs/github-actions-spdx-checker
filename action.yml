@@ -84,7 +84,7 @@ runs:
           args+=("--year" "$year")
         fi
 
-        if [ "$debug" = "true" ]; then
+        if [ "$debug" = "1" ]; then
           args+=("--debug")
         fi
 
