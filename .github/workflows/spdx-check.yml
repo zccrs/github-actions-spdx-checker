@@ -25,4 +25,4 @@ jobs:
           python-version: '3.11'
 
       - name: Run SPDX header validation
-        run: scripts/check_spdx_headers.py --base "origin/${{ github.base_ref }}"
+        run: scripts/check_spdx_headers.py --base "${{ github.event.pull_request.base.sha }}" --head "${{ github.event.pull_request.head.sha }}"
