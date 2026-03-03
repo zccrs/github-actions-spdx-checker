@@ -54,7 +54,9 @@ class TestHeaderRegex(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertEqual(match.group("prefix"), "//")
         self.assertEqual(match.group("years"), "2026")
-        self.assertEqual(match.group("holder"), "UnionTech Software Technology Co., Ltd.")
+        self.assertEqual(
+            match.group("holder"), "UnionTech Software Technology Co., Ltd."
+        )
 
     def test_valid_copyright_header_year_range(self):
         """Test matching valid Copyright (C) header with year range."""
@@ -172,7 +174,9 @@ class TestValidateNewFile(unittest.TestCase):
     def test_new_file_missing_header(self):
         """Test that missing header (None years_field) is handled gracefully."""
         violations = []
-        validate_new_file("test.py", None, False, self.current_year, None, None, violations)
+        validate_new_file(
+            "test.py", None, False, self.current_year, None, None, violations
+        )
         # When years_field is None, the function returns early without adding violations
         # The missing header should be caught earlier in the main loop
         self.assertEqual(len(violations), 0)
@@ -181,7 +185,9 @@ class TestValidateNewFile(unittest.TestCase):
         """Test that incorrect year generates violation."""
         violations = []
         header = "// SPDX-FileCopyrightText: 2025 Test Corp"
-        validate_new_file("test.py", "2025", True, self.current_year, header, "Test Corp", violations)
+        validate_new_file(
+            "test.py", "2025", True, self.current_year, header, "Test Corp", violations
+        )
         self.assertEqual(len(violations), 1)
         self.assertIn("should be", violations[0].message_en)
         self.assertIn("Current:", violations[0].message_en)
@@ -191,7 +197,15 @@ class TestValidateNewFile(unittest.TestCase):
         """Test that year range on new file generates violation."""
         violations = []
         header = "// SPDX-FileCopyrightText: 2023-2026 Test Corp"
-        validate_new_file("test.py", "2023-2026", True, self.current_year, header, "Test Corp", violations)
+        validate_new_file(
+            "test.py",
+            "2023-2026",
+            True,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
         self.assertEqual(len(violations), 1)
         self.assertIn("single year", violations[0].message_en)
         self.assertIn("Current:", violations[0].message_en)
@@ -201,7 +215,15 @@ class TestValidateNewFile(unittest.TestCase):
         """Test valid new file generates no violations."""
         violations = []
         header = f"// SPDX-FileCopyrightText: {self.current_year} Test Corp"
-        validate_new_file("test.py", str(self.current_year), True, self.current_year, header, "Test Corp", violations)
+        validate_new_file(
+            "test.py",
+            str(self.current_year),
+            True,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
         self.assertEqual(len(violations), 0)
 
 
@@ -215,7 +237,9 @@ class TestValidateModifiedFile(unittest.TestCase):
     def test_modified_file_missing_header(self):
         """Test that missing header (None years_field) is handled gracefully."""
         violations = []
-        validate_modified_file("test.py", None, False, 2023, self.current_year, None, None, violations)
+        validate_modified_file(
+            "test.py", None, False, 2023, self.current_year, None, None, violations
+        )
         # When years_field is None, the function returns early without adding violations
         # The missing header should be caught earlier in the main loop
         self.assertEqual(len(violations), 0)
@@ -224,16 +248,34 @@ class TestValidateModifiedFile(unittest.TestCase):
         """Test modified file created in current year."""
         violations = []
         header = f"// SPDX-FileCopyrightText: {self.current_year} Test Corp"
-        validate_modified_file("test.py", str(self.current_year), True, self.current_year, self.current_year, header, "Test Corp", violations)
+        validate_modified_file(
+            "test.py",
+            str(self.current_year),
+            True,
+            self.current_year,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
         self.assertEqual(len(violations), 0)
 
-    def test_modified_file_older_without_range(self):
-        """Test modified file from older year without range format."""
+    def test_modified_file_old_year_without_range(self):
+        """Test modified file with old year (not current) without range format."""
         violations = []
         header = "// SPDX-FileCopyrightText: 2023 Test Corp"
-        validate_modified_file("test.py", "2023", True, 2023, self.current_year, header, "Test Corp", violations)
+        validate_modified_file(
+            "test.py",
+            "2023",
+            True,
+            2023,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
         self.assertEqual(len(violations), 1)
-        self.assertIn("year range", violations[0].message_en)
+        self.assertIn("should be", violations[0].message_en)
         self.assertIn("Current:", violations[0].message_en)
         self.assertIn("Expected:", violations[0].message_en)
 
@@ -241,14 +283,32 @@ class TestValidateModifiedFile(unittest.TestCase):
         """Test modified file with correct year range."""
         violations = []
         header = f"// SPDX-FileCopyrightText: 2023-{self.current_year} Test Corp"
-        validate_modified_file("test.py", f"2023-{self.current_year}", True, 2023, self.current_year, header, "Test Corp", violations)
+        validate_modified_file(
+            "test.py",
+            f"2023-{self.current_year}",
+            True,
+            2023,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
         self.assertEqual(len(violations), 0)
 
     def test_modified_file_with_incorrect_range_end(self):
         """Test modified file with incorrect range end year."""
         violations = []
         header = "// SPDX-FileCopyrightText: 2023-2025 Test Corp"
-        validate_modified_file("test.py", "2023-2025", True, 2023, self.current_year, header, "Test Corp", violations)
+        validate_modified_file(
+            "test.py",
+            "2023-2025",
+            True,
+            2023,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
         self.assertEqual(len(violations), 1)
         self.assertIn("Update SPDX year range", violations[0].message_en)
         self.assertIn("Current:", violations[0].message_en)
@@ -258,7 +318,16 @@ class TestValidateModifiedFile(unittest.TestCase):
         """Test modified file with identical start and end year."""
         violations = []
         header = f"// SPDX-FileCopyrightText: {self.current_year}-{self.current_year} Test Corp"
-        validate_modified_file("test.py", f"{self.current_year}-{self.current_year}", True, self.current_year, self.current_year, header, "Test Corp", violations)
+        validate_modified_file(
+            "test.py",
+            f"{self.current_year}-{self.current_year}",
+            True,
+            self.current_year,
+            self.current_year,
+            header,
+            "Test Corp",
+            violations,
+        )
         self.assertEqual(len(violations), 1)
         self.assertIn("identical start and end", violations[0].message_en)
         self.assertIn("Current:", violations[0].message_en)
@@ -288,7 +357,9 @@ class TestHolderFiltering(unittest.TestCase):
         self.assertTrue(fnmatch.fnmatch("UnionTech Software", "UnionTech Software"))
 
         # Test wildcard patterns
-        self.assertTrue(fnmatch.fnmatch("UnionTech Software Technology Co., Ltd.", "*UnionTech*"))
+        self.assertTrue(
+            fnmatch.fnmatch("UnionTech Software Technology Co., Ltd.", "*UnionTech*")
+        )
         self.assertTrue(fnmatch.fnmatch("Alice Corp", "*Corp"))
         self.assertTrue(fnmatch.fnmatch("Bob Inc.", "Bob*"))
 
@@ -308,7 +379,9 @@ class TestHolderFiltering(unittest.TestCase):
             # File with UnionTech holder
             file1 = os.path.join(tmp_dir, "file1.py")
             with open(file1, "w") as f:
-                f.write("# SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.\n")
+                f.write(
+                    "# SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.\n"
+                )
                 f.write("# SPDX-License-Identifier: GPL-3.0-or-later\n")
                 f.write("print('hello')\n")
 
@@ -320,7 +393,7 @@ class TestHolderFiltering(unittest.TestCase):
                 f.write("print('world')\n")
 
             # Mock git operations and change to temp directory
-            with patch('scripts.check_spdx_headers.run_git') as mock_git:
+            with patch("scripts.check_spdx_headers.run_git") as mock_git:
                 # Set up return values for git commands
                 def git_side_effect(*args):
                     if args[0][0] == "rev-parse":
@@ -344,13 +417,15 @@ class TestHolderFiltering(unittest.TestCase):
                 f.write("# SPDX-License-Identifier: GPL-3.0-or-later\n")
                 f.write("print('test')\n")
 
-            with patch('scripts.check_spdx_headers.run_git') as mock_git:
+            with patch("scripts.check_spdx_headers.run_git") as mock_git:
                 # Set up return values for git commands
                 def git_side_effect(*args):
                     if args[0][0] == "rev-parse":
                         return ""  # git rev-parse
                     elif args[0][0] == "diff":
-                        return f"A\t{os.path.basename(file1)}\n"  # git diff --name-status
+                        return (
+                            f"A\t{os.path.basename(file1)}\n"  # git diff --name-status
+                        )
                     else:
                         return ""
 
@@ -362,15 +437,21 @@ class TestHolderFiltering(unittest.TestCase):
                 try:
                     # Capture stdout to check debug output
                     captured_output = StringIO()
-                    with patch('sys.stdout', captured_output):
-                        result = main(['--base', 'HEAD', '--holder', '*UnionTech*', '--debug'])
+                    with patch("sys.stdout", captured_output):
+                        result = main(
+                            ["--base", "HEAD", "--holder", "*UnionTech*", "--debug"]
+                        )
                         output = captured_output.getvalue()
 
-                    self.assertEqual(result, 0)  # Should pass as no files match holder pattern
+                    self.assertEqual(
+                        result, 0
+                    )  # Should pass as no files match holder pattern
                     self.assertIn("Ignored (holder mismatch)", output)
                     self.assertIn("File holder: 'Alice Corporation'", output)
                     self.assertIn("Pattern: '*UnionTech*'", output)
-                    self.assertIn("Reason: File copyright holder does not match", output)
+                    self.assertIn(
+                        "Reason: File copyright holder does not match", output
+                    )
 
                 finally:
                     os.chdir(old_cwd)
